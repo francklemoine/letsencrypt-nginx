@@ -18,4 +18,4 @@ Before managing container (e.g. within docker-compose), the container must be la
 
 Then you can start container and links it with HAProxy, Nginx, Apache ...
 
-    `docker run -d --name letsencrypt_container -v letsencrypt_certificates:/etc/letsencrypt -e DOMAIN1=xxxx -e EMAIL1=xxxx -e DOMAIN2=xxxx -e EMAIL2=xxxx flem/letsencrypt-nginx`
+`docker run -d --name letsencrypt_container -v letsencrypt_certificates:/etc/letsencrypt -e DOMAIN1=xxxx -e EMAIL1=xxxx -e DOMAIN2=xxxx -e EMAIL2=xxxx flem/letsencrypt-nginx`
