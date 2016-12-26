@@ -23,7 +23,7 @@ fi
 
 
 for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
-	if [[ ! -d "/var/www/${DOMAIN_ARRAY[$i]}" ]]; then
+	if [[ ! -d "/etc/letsencrypt/live/${DOMAIN_ARRAY[$i]}" ]]; then
 		[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
 		echo -e "10 ${i} * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_${DOMAIN_ARRAY[$i]}.log\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
 		echo -e "40 ${i} * * 0 root /usr/local/bin/bunch_certificates.sh \"${DOMAIN_ARRAY[$i]}\"" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
@@ -63,7 +63,6 @@ for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
 			echo '================================================================================='
 			echo
 
-			rm -fR /var/www/${DOMAIN_ARRAY[$i]}
 			rm -f  /etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
 		fi
 
@@ -71,6 +70,7 @@ for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
 		/usr/sbin/nginx -s stop
 		# nginx config
 		rm -f /etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf
+		rm -fR /var/www/${DOMAIN_ARRAY[$i]}
 	fi
 done
 
