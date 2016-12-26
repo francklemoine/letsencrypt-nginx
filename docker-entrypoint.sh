@@ -35,7 +35,7 @@ for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
 		    -e "s/___HOSTNAME___/${HOSTNAME}/g" \
 		    /etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf
 		# start nginx
-		/usr/sbin/nginx -d "daemon on;"
+		/usr/sbin/nginx -g "daemon on;"
 
 		# letsencrypt cert
 		if /opt/letsencrypt/letsencrypt-auto certonly \
