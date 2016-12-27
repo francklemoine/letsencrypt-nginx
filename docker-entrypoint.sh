@@ -76,6 +76,9 @@ for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
 		[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
 		echo -e "10 ${i} * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_${DOMAIN_ARRAY[$i]}.log\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
 		echo -e "40 ${i} * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
+
+		# Bunch the certs
+		/usr/local/bin/bunch_certificate.sh "${DOMAIN_ARRAY[$i]}"
 	fi
 done
 
