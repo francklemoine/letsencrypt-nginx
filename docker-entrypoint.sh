@@ -4,6 +4,47 @@ set -e
 
 MAXDOMAIN=9
 
+
+letsencrypt_configure() {
+	local domain=$1
+	local email=$2
+
+	# start nginx
+	/usr/sbin/nginx -g "daemon on;"
+
+	# letsencrypt cert
+	if /opt/letsencrypt/letsencrypt-auto certonly \
+						--text \
+						--no-self-upgrade \
+						--agree-tos \
+						--email ${email} \
+						--rsa-key-size 4096 \
+						--webroot \
+						--webroot-path /etc/letsencrypt/www/${domain} \
+						--domain ${domain}
+	then
+		# Echo quickstart guide to logs
+		echo
+		echo '================================================================================='
+		echo "Your ${domain} letsencrypt container is now ready to use!"
+		echo '================================================================================='
+		echo
+
+		# Bunch the certs for the first time
+		/usr/local/bin/bunch_certificate.sh "${domain}"
+	else
+		echo
+		echo '================================================================================='
+		echo "Your ${DOMAIN_ARRAY[$i]} letsencrypt container can't get certificates!"
+		echo '================================================================================='
+		echo
+	fi
+
+	# stop nginx
+	/usr/sbin/nginx -s stop
+}
+
+
 # set EMAIL and DOMAIN arrays
 for (( i=1; i<=${MAXDOMAIN}; i++ )); do
 	if [[ -v EMAIL${i} && -v DOMAIN${i} ]]; then
@@ -21,76 +62,35 @@ if [[ -z "${EMAIL_ARRAY[*]}" || -z "${DOMAIN_ARRAY[*]}" ]]; then
 	exit 1
 fi
 
+[[ -d /etc/letsencrypt/www ]] || mkdir -p /etc/letsencrypt/www
 
-for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
-	if [[ ! -d "/etc/letsencrypt/live/${DOMAIN_ARRAY[$i]}" ]]; then
-		# nginx config
-		mkdir /var/www/${DOMAIN_ARRAY[$i]}
-		sed -e "s/___SERVERNAME___/${DOMAIN_ARRAY[$i]}/g" \
-		    -e "s/___SERVERADMIN___/${EMAIL_ARRAY[$i]}/g" \
-		    -e "s/___HOSTNAME___/${HOSTNAME}/g" \
-		    /etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf
-		# start nginx
-		/usr/sbin/nginx -g "daemon on;"
-
-		# letsencrypt cert
-		if /opt/letsencrypt/letsencrypt-auto certonly \
-			                              --text \
-			                              --no-self-upgrade \
-			                              --agree-tos \
-			                              --email ${EMAIL_ARRAY[$i]} \
-			                              --rsa-key-size 4096 \
-			                              --webroot \
-			                              --webroot-path /var/www/${DOMAIN_ARRAY[$i]} \
-			                              --domain ${DOMAIN_ARRAY[$i]}
-		then
-			# Echo quickstart guide to logs
-			echo
-			echo '================================================================================='
-			echo "Your ${DOMAIN_ARRAY[$i]} letsencrypt container is now ready to use!"
-			echo '================================================================================='
-			echo
-
-			# configure cron
-			[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
-			echo -e "10 ${i} * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_${DOMAIN_ARRAY[$i]}.log\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
-			echo -e "40 ${i} * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
-
-			# Bunch the certs for the first time
-			/usr/local/bin/bunch_certificate.sh "${DOMAIN_ARRAY[$i]}"
-		else
-			echo
-			echo '================================================================================='
-			echo "Your ${DOMAIN_ARRAY[$i]} letsencrypt container can't get certificates!"
-			echo '================================================================================='
-			echo
-		fi
-
-		# stop nginx
-		/usr/sbin/nginx -s stop
-		# nginx config
-		rm -f /etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf
-		rm -fR /var/www/${DOMAIN_ARRAY[$i]}
-	else
-		# configure cron
-		[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
-		echo -e "10 ${i} * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_${DOMAIN_ARRAY[$i]}.log\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
-		echo -e "40 ${i} * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]/./-}
-
-		# Bunch the certs
-		/usr/local/bin/bunch_certificate.sh "${DOMAIN_ARRAY[$i]}"
-	fi
-done
 
 case "$@" in
 	bash|/bin/bash)
 		/bin/bash
 		;;
 	configure)
+		for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
+			# nginx config
+			[[ -d /etc/letsencrypt/www/${DOMAIN_ARRAY[$i]} ]]   || mkdir -p /etc/letsencrypt/www/${DOMAIN_ARRAY[$i]}
+			[[ -f /etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf ]] || \
+				sed -e "s/___SERVERNAME___/${DOMAIN_ARRAY[$i]}/g" \
+					-e "s/___SERVERADMIN___/${EMAIL_ARRAY[$i]}/g" \
+					-e "s/___HOSTNAME___/${HOSTNAME}/g" \
+					/etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf
+			[[ -d "/etc/letsencrypt/live/${DOMAIN_ARRAY[$i]}" ]] || letsencrypt_configure "${DOMAIN_ARRAY[$i]}" "${EMAIL_ARRAY[$i]}"
+
+			# configure cron
+			[[ -f "/etc/cron.d/letsencrypt-renew" ]] && rm -f /etc/cron.d/letsencrypt-renew
+			echo -e "10 1 * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_renew.log\n" >>/etc/cron.d/letsencrypt-renew
+
+			[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
+			echo -e "40 ${i} * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
+		done
 		exit 0
 		;;
-    *)
-		/usr/sbin/cron -f -L 15
+	*)
+		/usr/bin/supervisord
 		exit 0
 		;;
 esac

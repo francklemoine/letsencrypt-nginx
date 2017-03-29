@@ -4,7 +4,7 @@ Docker image with letsencrypt + nginx
 
 This image can manage up to 9 domains.
 It uses nginx during the configuration step.
-Otherwise, it launch the cron daemon to renew certs when needed.
+Otherwise, it launch both nginx+cron daemons to renew certs when needed.
 
 Before managing container (e.g. within docker-compose), the container must be launch once with nginx visible on the Internet to perform domain validation :
 
@@ -19,4 +19,3 @@ Before managing container (e.g. within docker-compose), the container must be la
 Then you can start container and links it with HAProxy, Nginx, Apache ...
 
 `docker run -d --name letsencrypt_container -v letsencrypt_certificates:/etc/letsencrypt -e DOMAIN1=xxxx -e EMAIL1=xxxx -e DOMAIN2=xxxx -e EMAIL2=xxxx flem/letsencrypt-nginx`
-

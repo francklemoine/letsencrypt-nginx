@@ -16,6 +16,7 @@ RUN buildDeps=' \
 		git \
 		ca-certificates \
 		cron \
+		supervisor \
 	' \
 	set -x \
 	&& apt-get -y update \
@@ -34,10 +35,11 @@ RUN buildDeps=' \
 COPY nginx-letsencrypt.conf /etc/nginx/
 COPY bunch_certificate.sh /usr/local/bin
 COPY docker-entrypoint.sh /
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN chmod +x /docker-entrypoint.sh \
 	&& chmod +x /usr/local/bin/bunch_certificate.sh
 
-VOLUME ["/etc/letsencrypt", "/var/www"]
+VOLUME ["/etc/letsencrypt"]
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
