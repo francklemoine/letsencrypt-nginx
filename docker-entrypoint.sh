@@ -20,7 +20,7 @@ letsencrypt_configure() {
 						--email ${email} \
 						--rsa-key-size 4096 \
 						--webroot \
-						--webroot-path /etc/letsencrypt/www/${domain} \
+						--webroot-path /etc/letsencrypt/www \
 						--domain ${domain}
 	then
 		# Echo quickstart guide to logs
@@ -72,12 +72,7 @@ case "$@" in
 	configure)
 		for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
 			# nginx config
-			[[ -d /etc/letsencrypt/www/${DOMAIN_ARRAY[$i]} ]]   || mkdir -p /etc/letsencrypt/www/${DOMAIN_ARRAY[$i]}
-			[[ -f /etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf ]] || \
-				sed -e "s/___SERVERNAME___/${DOMAIN_ARRAY[$i]}/g" \
-					-e "s/___SERVERADMIN___/${EMAIL_ARRAY[$i]}/g" \
-					-e "s/___HOSTNAME___/${HOSTNAME}/g" \
-					/etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/${DOMAIN_ARRAY[$i]}.conf
+			[[ -f /etc/nginx/conf.d/letsencrypt.conf ]] || sed -e "s/___HOSTNAME___/${HOSTNAME}/g" /etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/letsencrypt.conf
 			[[ -d "/etc/letsencrypt/live/${DOMAIN_ARRAY[$i]}" ]] || letsencrypt_configure "${DOMAIN_ARRAY[$i]}" "${EMAIL_ARRAY[$i]}"
 
 			# configure cron
