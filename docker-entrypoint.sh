@@ -45,6 +45,18 @@ letsencrypt_configure() {
 }
 
 
+cron_configure() {
+	local domain=$1
+
+	# configure cron
+	[[ -f "/etc/cron.d/letsencrypt-renew" ]] && rm -f /etc/cron.d/letsencrypt-renew
+	echo -e "10 1 * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_renew.log\n" >>/etc/cron.d/letsencrypt-renew
+
+	[[ -f "/etc/cron.d/${domain//./-}" ]] && rm -f /etc/cron.d/${domain//./-}
+	echo -e "40 1 * * 0 root /usr/local/bin/bunch_certificate.sh \"${domain}\"\n" >>/etc/cron.d/${domain//./-}
+}
+
+
 # set EMAIL and DOMAIN arrays
 for (( i=1; i<=${MAXDOMAIN}; i++ )); do
 	if [[ -v EMAIL${i} && -v DOMAIN${i} ]]; then
@@ -76,15 +88,15 @@ case "$@" in
 			[[ -d "/etc/letsencrypt/live/${DOMAIN_ARRAY[$i]}" ]] || letsencrypt_configure "${DOMAIN_ARRAY[$i]}" "${EMAIL_ARRAY[$i]}"
 
 			# configure cron
-			[[ -f "/etc/cron.d/letsencrypt-renew" ]] && rm -f /etc/cron.d/letsencrypt-renew
-			echo -e "10 1 * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_renew.log\n" >>/etc/cron.d/letsencrypt-renew
-
-			[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
-			echo -e "4${i} 1 * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
+			cron_configure "${DOMAIN_ARRAY[$i]}"
 		done
 		exit 0
 		;;
 	*)
+		for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
+			# configure cron
+			cron_configure "${DOMAIN_ARRAY[$i]}"
+		done
 		/usr/bin/supervisord
 		exit 0
 		;;
