@@ -80,7 +80,7 @@ case "$@" in
 			echo -e "10 1 * * 0 root /opt/letsencrypt/letsencrypt-auto renew --no-self-upgrade >>/var/log/letsencrypt_renew.log\n" >>/etc/cron.d/letsencrypt-renew
 
 			[[ -f "/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}" ]] && rm -f /etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
-			echo -e "40 ${i} * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
+			echo -e "4${i} 1 * * 0 root /usr/local/bin/bunch_certificate.sh \"${DOMAIN_ARRAY[$i]}\"\n" >>/etc/cron.d/${DOMAIN_ARRAY[$i]//./-}
 		done
 		exit 0
 		;;
