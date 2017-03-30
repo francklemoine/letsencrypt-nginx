@@ -57,6 +57,12 @@ cron_configure() {
 }
 
 
+nginx_configure() {
+	[[ -f /etc/nginx/conf.d/letsencrypt.conf ]] && rm /etc/nginx/conf.d/letsencrypt.conf
+	sed -e "s/___HOSTNAME___/${HOSTNAME}/g" /etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/letsencrypt.conf
+}
+
+
 # set EMAIL and DOMAIN arrays
 for (( i=1; i<=${MAXDOMAIN}; i++ )); do
 	if [[ -v EMAIL${i} && -v DOMAIN${i} ]]; then
@@ -82,9 +88,9 @@ case "$@" in
 		/bin/bash
 		;;
 	configure)
+		# configure nginx
+		nginx_configure
 		for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
-			# nginx config
-			[[ -f /etc/nginx/conf.d/letsencrypt.conf ]] || sed -e "s/___HOSTNAME___/${HOSTNAME}/g" /etc/nginx/nginx-letsencrypt.conf >/etc/nginx/conf.d/letsencrypt.conf
 			[[ -d "/etc/letsencrypt/live/${DOMAIN_ARRAY[$i]}" ]] || letsencrypt_configure "${DOMAIN_ARRAY[$i]}" "${EMAIL_ARRAY[$i]}"
 
 			# configure cron
@@ -93,6 +99,10 @@ case "$@" in
 		exit 0
 		;;
 	*)
+		# here are configurations in case of a new empty container is started ...
+
+		# configure nginx
+		nginx_configure
 		for (( i=1; i<=${#DOMAIN_ARRAY[@]}; i++ )); do
 			# configure cron
 			cron_configure "${DOMAIN_ARRAY[$i]}"
