@@ -2,7 +2,7 @@
 
 Docker image with letsencrypt + nginx
 
-This image can manage up to 9 domains.
+This image can manage up to 100 domains.
 It uses nginx during the configuration step.
 Otherwise, it launch both nginx+cron daemons to renew certs when needed.
 

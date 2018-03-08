@@ -2,7 +2,7 @@
 
 set -e
 
-MAXDOMAIN=9
+MAXDOMAIN=100
 
 
 letsencrypt_configure() {
